@@ -27,13 +27,13 @@ jobs:
       - name: 製作安裝檔
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\pwfinder.iss'
       - name: 壓縮免安裝版
-        run: Compress-Archive -Path "dist\資料助秘密碼查找器\*" -DestinationPath "資料助秘密碼查找器_Windows_免安裝.zip"
+        run: Compress-Archive -Path "dist\資料助秘密碼查找器\*" -DestinationPath "zms-pwfinder-v1.0.0-Windows-portable.zip"
       - name: 發佈到 Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist-installer/*.exe
-            資料助秘密碼查找器_Windows_免安裝.zip
+            zms-pwfinder-v1.0.0-Windows-portable.zip
 
   # ---------------- macOS ----------------
   macos:
@@ -59,8 +59,8 @@ jobs:
       - name: 壓縮 .app
         run: |
           cd dist
-          zip -r -y "../資料助秘密碼查找器_macOS.zip" "資料助秘密碼查找器.app"
+          zip -r -y "../zms-pwfinder-v1.0.0-macOS.zip" "資料助秘密碼查找器.app"
       - name: 發佈到 Release
         uses: softprops/action-gh-release@v2
         with:
-          files: 資料助秘密碼查找器_macOS.zip
+          files: zms-pwfinder-v1.0.0-macOS.zip
