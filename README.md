@@ -1,7 +1,7 @@
-# 資料助秘 密碼查找器
-
+# 資料助秘 密碼查找器 https://achir1015.github.io/zms-pwfinder/
+<img width="1898" height="827" alt="image" src="https://github.com/user-attachments/assets/d79e0b23-cc3e-44bf-835d-35dd4dd89205" />
 幫你找回「自己」忘記的密碼。全程在本機執行，給一般人用、打開即可用、關閉即停止。
-
+說明
 > ⚠️ 本工具只用於回復**自己**電腦上、**自己**檔案與帳號的密碼。
 > **不含**任何攻擊他人帳號的功能（密碼噴灑、撞庫、外洩帳密比對等一律排除）。
 
