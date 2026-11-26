@@ -1,5 +1,13 @@
 """產生 app 圖示 PNG/ICO（資料助秘 密碼查找器：藍紫底、放大鏡、鑰匙孔）。"""
 import os
+import sys
+
+# Windows CI 的 stdout 被導向時預設 cp1252，印中文會 UnicodeEncodeError，先轉 UTF-8
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
