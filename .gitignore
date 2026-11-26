@@ -1,0 +1,31 @@
+# 建置產物
+build/
+dist/
+dist-installer/
+*.manifest
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 本機設定與學習庫（存於 %APPDATA%，不應入庫）
+config.json
+learned.json
+learned.json.tmp
+
+# 原始設計文件（本機參考，不入公開庫）
+密碼查找器.docx
+~$*.docx
+~WRL*.tmp
+*.tmp
+
+# 編輯器 / 系統
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

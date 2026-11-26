@@ -1,0 +1,13 @@
+# 資料助秘 密碼查找器 — Windows 桌面版相依套件
+pywebview>=5.0
+flask>=3.0
+waitress>=3.0
+msoffcrypto-tool>=5.4
+pyzipper>=0.3.6
+py7zr>=0.21
+rarfile>=4.2
+pywin32>=306
+pymysql>=1.1
+pillow>=10.0
+# 打包
+pyinstaller>=6.0

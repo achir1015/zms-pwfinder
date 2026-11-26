@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資料助秘 密碼查找器</title>
+<link rel="icon" href="assets/icon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="assets/icon.svg" alt="logo" class="logo">
+    <div class="brand-text">
+      <div class="brand-main">資料助秘<span class="brand-sub">密碼查找器</span></div>
+      <div class="brand-note">找回「自己」忘記的密碼 · 全程本機</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="voiceToggle" class="chip" title="語音教學開關">🔊 語音教學：開</button>
+    <button id="btnUpdate" class="chip" title="檢查更新">⬆ 檢查更新 <span id="verTag"></span></button>
+    <button id="btnDb" class="chip" title="資料庫設定">🗄 學習庫</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-tab="wifi">📶 WiFi 密碼</button>
+  <button class="tab" data-tab="text">📝 文字抓密碼</button>
+  <button class="tab" data-tab="archive">🗜 壓縮檔密碼</button>
+  <button class="tab" data-tab="office">📄 Office 密碼</button>
+  <button class="tab" data-tab="star">👁 星號顯示</button>
+  <button class="tab" data-tab="mail">✉ 郵件密碼</button>
+</nav>
+
+<main class="content">
+
+  <!-- WiFi -->
+  <section class="panel active" id="panel-wifi">
+    <div class="panel-head">
+      <h2>WiFi 密碼</h2>
+      <button class="voice-btn" data-voice="wifi">▶ 聽說明</button>
+    </div>
+    <p class="hint">顯示這台電腦「已經記住」的無線網路密碼，等同 Windows 設定裡本來就看得到的資訊。</p>
+    <button class="btn-primary" id="wifiLoad">列出已儲存的 WiFi 密碼</button>
+    <div id="wifiResult" class="result-area"></div>
+  </section>
+
+  <!-- 文字抓密碼 -->
+  <section class="panel" id="panel-text">
+    <div class="panel-head">
+      <h2>文字抓密碼</h2>
+      <button class="voice-btn" data-voice="text">▶ 聽說明</button>
+    </div>
+    <p class="hint">把郵件或文件內文貼進來，自動抓出像「密碼是 XXX」「password: XXX」這類寫在文字裡的密碼。</p>
+    <textarea id="textInput" placeholder="在此貼上郵件／文件內文……例如：附件的密碼是 Q3Report2026z"></textarea>
+    <button class="btn-primary" id="textRun">抓出密碼</button>
+    <div id="textResult" class="result-area"></div>
+  </section>
+
+  <!-- 壓縮檔 -->
+  <section class="panel" id="panel-archive">
+    <div class="panel-head">
+      <h2>壓縮檔密碼</h2>
+      <button class="voice-btn" data-voice="archive">▶ 聽說明</button>
+    </div>
+    <p class="hint">回復自己忘記的 ZIP / 7z / RAR 密碼。成功的密碼會自動存入學習庫，下次優先嘗試、更快命中。</p>
+    <div class="file-row">
+      <input type="text" id="archivePath" class="path-input" placeholder="壓縮檔完整路徑，例如 E:\\檔案\\report.zip">
+      <button class="btn-file" id="archivePick">選擇檔案</button>
+    </div>
+    <div id="archiveOpts"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="archiveStart">開始回復</button>
+      <button class="btn-ghost" id="archiveStop" disabled>停止</button>
+    </div>
+    <div id="archiveProgress" class="progress-area"></div>
+    <div id="archiveResult" class="result-area"></div>
+  </section>
+
+  <!-- Office -->
+  <section class="panel" id="panel-office">
+    <div class="panel-head">
+      <h2>Office 密碼（Word / Excel / PPT）</h2>
+      <button class="voice-btn" data-voice="office">▶ 聽說明</button>
+    </div>
+    <p class="hint">回復自己忘記的 .docx / .xlsx / .pptx 開啟密碼。成功後一樣存入學習庫。</p>
+    <div class="file-row">
+      <input type="text" id="officePath" class="path-input" placeholder="Office 檔完整路徑，例如 E:\\檔案\\報表.xlsx">
+      <button class="btn-file" id="officePick">選擇檔案</button>
+    </div>
+    <div id="officeOpts"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="officeStart">開始回復</button>
+      <button class="btn-ghost" id="officeStop" disabled>停止</button>
+    </div>
+    <div id="officeProgress" class="progress-area"></div>
+    <div id="officeResult" class="result-area"></div>
+  </section>
+
+  <!-- 星號 -->
+  <section class="panel" id="panel-star">
+    <div class="panel-head">
+      <h2>星號密碼顯示</h2>
+      <button class="voice-btn" data-voice="star">▶ 聽說明</button>
+    </div>
+    <p class="hint">把滑鼠移到某個軟體的密碼欄（顯示 ●●● 的那格）上，再按下方按鈕，試著還原成文字。<br>
+      <span class="warn">僅對傳統 Windows 密碼框有效；瀏覽器、UWP、Electron 等自繪欄位系統無法讀取。</span></p>
+    <button class="btn-primary" id="starRun">抓取游標下的密碼框</button>
+    <div id="starResult" class="result-area"></div>
+  </section>
+
+  <!-- 郵件 -->
+  <section class="panel" id="panel-mail">
+    <div class="panel-head">
+      <h2>郵件密碼</h2>
+      <button class="voice-btn" data-voice="mail">▶ 聽說明</button>
+    </div>
+    <p class="hint">還原本機 Thunderbird / Outlook 已經替你記住的郵件帳號密碼。全程本機，不連線、不猜測他人信箱。</p>
+    <button class="btn-primary" id="mailLoad">讀取本機郵件密碼</button>
+    <div id="mailResult" class="result-area"></div>
+  </section>
+
+</main>
+
+<!-- 學習庫 / 資料庫設定 對話框 -->
+<div class="modal" id="dbModal">
+  <div class="modal-box">
+    <h3>學習庫與資料庫</h3>
+    <div id="learnStats" class="stats-area"></div>
+    <hr>
+    <p class="hint">預設用本機學習庫（零設定）。若要多人共用、沿用資料助秘的帳號權限，可改接 MariaDB。</p>
+    <label class="chk"><input type="checkbox" id="dbEnabled"> 啟用 MariaDB</label>
+    <div class="form-grid">
+      <label>主機<input id="dbHost" placeholder="127.0.0.1"></label>
+      <label>埠<input id="dbPort" placeholder="3558"></label>
+      <label>帳號<input id="dbUser" placeholder="root"></label>
+      <label>密碼<input id="dbPass" type="password" placeholder=""></label>
+      <label>資料庫<input id="dbName" placeholder="zms_pwfinder"></label>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="dbSave">儲存並測試連線</button>
+      <button class="btn-ghost" id="dbClose">關閉</button>
+    </div>
+    <div id="dbMsg" class="result-area"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/options.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/local.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "name": "資料助秘 密碼查找器",
+  "notes": "首版：WiFi／文字抓密碼／壓縮檔／Office／星號顯示／郵件密碼，成功密碼自動學習。",
+  "github_repo": "achir1015/zms-pwfinder"
+}
