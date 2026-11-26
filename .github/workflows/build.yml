@@ -1,0 +1,66 @@
+name: 建置桌面版（Windows / macOS）
+
+on:
+  push:
+    tags: ["v*"]          # 推 v1.0.0 之類的 tag 觸發建置並發佈 Release
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------- Windows ----------------
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 安裝相依
+        run: pip install -r requirements.txt
+      - name: 產生圖示
+        run: python tools/make_icon.py
+      - name: PyInstaller 打包
+        run: pyinstaller --noconfirm --clean packaging/pwfinder.spec
+      - name: 安裝 Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: 製作安裝檔
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\pwfinder.iss'
+      - name: 壓縮免安裝版
+        run: Compress-Archive -Path "dist\資料助秘密碼查找器\*" -DestinationPath "資料助秘密碼查找器_Windows_免安裝.zip"
+      - name: 發佈到 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-installer/*.exe
+            資料助秘密碼查找器_Windows_免安裝.zip
+
+  # ---------------- macOS ----------------
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 安裝相依
+        run: pip install -r requirements.txt
+      - name: 產生圖示（含 .icns）
+        run: |
+          python tools/make_icon.py
+          mkdir -p icon.iconset
+          sips -z 16 16     web/assets/icon-512.png --out icon.iconset/icon_16x16.png
+          sips -z 32 32     web/assets/icon-512.png --out icon.iconset/icon_16x16@2x.png
+          sips -z 128 128   web/assets/icon-512.png --out icon.iconset/icon_128x128.png
+          sips -z 256 256   web/assets/icon-512.png --out icon.iconset/icon_128x128@2x.png
+          sips -z 512 512   web/assets/icon-512.png --out icon.iconset/icon_512x512.png
+          iconutil -c icns icon.iconset -o web/assets/icon.icns
+      - name: PyInstaller 打包 .app
+        run: pyinstaller --noconfirm --clean packaging/pwfinder.spec
+      - name: 壓縮 .app
+        run: |
+          cd dist
+          zip -r -y "../資料助秘密碼查找器_macOS.zip" "資料助秘密碼查找器.app"
+      - name: 發佈到 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: 資料助秘密碼查找器_macOS.zip

@@ -1,4 +1,5 @@
-# 資料助秘 密碼查找器 — Windows 桌面版相依套件
+# 資料助秘 密碼查找器 — 相依套件
+# 桌面版（Windows / macOS / Linux）；線上版為純前端不需這些。
 pywebview>=5.0
 flask>=3.0
 waitress>=3.0
@@ -6,8 +7,12 @@ msoffcrypto-tool>=5.4
 pyzipper>=0.3.6
 py7zr>=0.21
 rarfile>=4.2
-pywin32>=306
 pymysql>=1.1
-pillow>=10.0
-# 打包
+
+# 僅 Windows：星號密碼、郵件 DPAPI、netsh 之外的系統呼叫
+pywin32>=306; sys_platform == "win32"
+
+# 打包 / 工具（開發用）
 pyinstaller>=6.0
+pillow>=10.0          # 產生圖示
+edge-tts>=7.0         # 產生語音教學 MP3（已預先產生並入庫，CI 不需重跑）

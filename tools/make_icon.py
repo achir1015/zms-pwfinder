@@ -38,4 +38,12 @@ base.save(os.path.join(OUT, "icon.png"))
 # ICO 多尺寸（給 Windows 視窗、捷徑、打包）
 base.save(os.path.join(OUT, "icon.ico"),
           sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-print("icon.png / icon.ico 已產生於", OUT)
+# PWA / 手機圖示
+for sz in (180, 192, 512):
+    base.resize((sz, sz)).save(os.path.join(OUT, f"icon-{sz}.png"))
+# maskable（四周留白，避免被圓角裁掉）
+mask = Image.new("RGBA", (512, 512), (47, 109, 240, 255))
+inner = draw(512).resize((360, 360))
+mask.paste(inner, (76, 76), inner)
+mask.save(os.path.join(OUT, "icon-maskable.png"))
+print("icon.png/ico 與 PWA 圖示（180/192/512/maskable）已產生於", OUT)

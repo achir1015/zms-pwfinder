@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>資料助秘 密碼查找器</title>
 <link rel="icon" href="assets/icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f6df0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="密碼查找器">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -17,6 +23,7 @@
     </div>
   </div>
   <div class="top-actions">
+    <button id="btnInstall" class="chip" title="安裝到裝置" style="display:none">⬇ 安裝 App</button>
     <button id="voiceToggle" class="chip" title="語音教學開關">🔊 語音教學：開</button>
     <button id="btnUpdate" class="chip" title="檢查更新">⬆ 檢查更新 <span id="verTag"></span></button>
     <button id="btnDb" class="chip" title="資料庫設定">🗄 學習庫</button>
@@ -67,6 +74,7 @@
     <div class="file-row">
       <input type="text" id="archivePath" class="path-input" placeholder="壓縮檔完整路徑，例如 E:\\檔案\\report.zip">
       <button class="btn-file" id="archivePick">選擇檔案</button>
+      <input type="file" id="archiveFile" accept=".zip" hidden>
     </div>
     <div id="archiveOpts"></div>
     <div class="btn-row">
@@ -87,6 +95,7 @@
     <div class="file-row">
       <input type="text" id="officePath" class="path-input" placeholder="Office 檔完整路徑，例如 E:\\檔案\\報表.xlsx">
       <button class="btn-file" id="officePick">選擇檔案</button>
+      <input type="file" id="officeFile" accept=".docx,.xlsx,.pptx,.doc,.xls,.ppt" hidden>
     </div>
     <div id="officeOpts"></div>
     <div class="btn-row">
@@ -147,9 +156,16 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="vendor/zip-full.min.js"></script>
 <script src="js/options.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/local.js"></script>
 <script src="js/app.js"></script>
+<script>
+  // PWA service worker（線上/手機版可離線使用、可加到主畫面）
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
 </body>
 </html>

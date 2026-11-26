@@ -113,17 +113,25 @@
     } catch (e) { box.innerHTML = `<div class="fail-box">失敗：${e}</div>`; }
   };
 
-  /* ---------- 檔案選擇 ---------- */
-  async function pickFile(inputId) {
-    if (isDesktop()) {
-      const p = await window.pywebview.api.pick_file();
-      if (p) $("#" + inputId).value = p;
-    } else {
-      toast("線上版請直接貼上檔案路徑，或改用桌面版");
-    }
+  /* ---------- 檔案選擇（桌面用原生對話框；線上用 <input type=file>） ---------- */
+  const onlineFiles = {};  // key → File
+  function wireFile(pickBtnId, pathInputId, fileInputId, key) {
+    const fileInput = $("#" + fileInputId);
+    $("#" + pickBtnId).onclick = async () => {
+      if (isDesktop()) {
+        const p = await window.pywebview.api.pick_file();
+        if (p) $("#" + pathInputId).value = p;
+      } else {
+        fileInput.click();
+      }
+    };
+    fileInput.onchange = () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (f) { onlineFiles[key] = f; $("#" + pathInputId).value = f.name; }
+    };
   }
-  $("#archivePick").onclick = () => pickFile("archivePath");
-  $("#officePick").onclick = () => pickFile("officePath");
+  wireFile("archivePick", "archivePath", "archiveFile", "ar");
+  wireFile("officePick", "officePath", "officeFile", "of");
 
   /* ---------- 破解（壓縮檔 / Office 共用） ---------- */
   function setupCrack(cfg) {
@@ -132,10 +140,13 @@
     const startBtn = $("#" + cfg.startBtn), stopBtn = $("#" + cfg.stopBtn);
     const prog = $("#" + cfg.progId), res = $("#" + cfg.resId);
 
+    let localStop = false;
+
     startBtn.onclick = async () => {
       const path = $("#" + cfg.pathId).value.trim();
+      // 線上（純前端）模式
+      if (!hasBackend) { return runOnline(); }
       if (!path) { toast("請先選擇或輸入檔案路徑"); return; }
-      if (!hasBackend) { res.innerHTML = '<div class="fail-box">此功能需要桌面版。</div>'; return; }
       res.innerHTML = ""; prog.innerHTML = '<span class="spinner"></span>啟動中…';
       startBtn.disabled = true; stopBtn.disabled = false;
       try {
@@ -150,9 +161,45 @@
     };
 
     stopBtn.onclick = async () => {
+      localStop = true;
       if (jobId) await api("/api/crack/stop/" + jobId, { method: "POST" });
       toast("已要求停止…");
     };
+
+    // 線上（純前端）破解：壓縮檔走 zip.js；Office 線上版暫不支援
+    async function runOnline() {
+      if (cfg.target === "office") {
+        res.innerHTML = '<div class="fail-box">Office 密碼回復目前僅桌面版支援（瀏覽器端無合適的解密函式庫）。</div>';
+        return;
+      }
+      const file = onlineFiles[cfg.fileKey];
+      if (!file) { toast("請先選擇壓縮檔"); return; }
+      if (!/\.zip$/i.test(file.name)) {
+        res.innerHTML = '<div class="fail-box">線上版目前支援 ZIP；7z / RAR 請用桌面版。</div>'; return;
+      }
+      res.innerHTML = ""; prog.innerHTML = '<span class="spinner"></span>破解中…';
+      startBtn.disabled = true; stopBtn.disabled = false; localStop = false;
+      try {
+        const r = await Local.crackZip(file, Options.collect(cfg.prefix), {
+          onProgress: (tried, cur) => {
+            prog.innerHTML = `<span class="spinner"></span>已嘗試 <b>${tried.toLocaleString()}</b> 組` +
+              (cur ? ` · 目前：<code>${escapeHtml(cur)}</code>` : "");
+          },
+          shouldStop: () => localStop,
+        });
+        prog.innerHTML = ""; reset();
+        if (r.found) {
+          res.innerHTML = `<div class="found-box">✅ 找到密碼！<div class="big">${escapeHtml(r.password)}</div>
+            <div class="k" style="margin-top:6px">嘗試 ${r.tried.toLocaleString()} 組 · 已存入本機學習庫，下次更快</div></div>`;
+          const c = copyBtn(r.password); c.style.marginTop = "10px"; res.appendChild(c);
+          if (Voice.isEnabled()) Voice.speak("found");
+        } else if (r.stopped) {
+          res.innerHTML = `<div class="fail-box">已停止（試了 ${r.tried.toLocaleString()} 組）。</div>`;
+        } else {
+          res.innerHTML = `<div class="fail-box">試了 ${r.tried.toLocaleString()} 組仍未找到。可加入自備字典或擴大窮舉再試。</div>`;
+        }
+      } catch (e) { prog.innerHTML = ""; reset(); res.innerHTML = `<div class="fail-box">破解失敗：${e}</div>`; }
+    }
 
     async function poll() {
       if (!jobId) return;
@@ -181,23 +228,33 @@
     return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   }
 
-  setupCrack({ optsId: "archiveOpts", prefix: "ar", pathId: "archivePath",
+  setupCrack({ optsId: "archiveOpts", prefix: "ar", pathId: "archivePath", fileKey: "ar",
     startBtn: "archiveStart", stopBtn: "archiveStop", progId: "archiveProgress",
     resId: "archiveResult", target: "archive" });
-  setupCrack({ optsId: "officeOpts", prefix: "of", pathId: "officePath",
+  setupCrack({ optsId: "officeOpts", prefix: "of", pathId: "officePath", fileKey: "of",
     startBtn: "officeStart", stopBtn: "officeStop", progId: "officeProgress",
     resId: "officeResult", target: "office" });
 
   /* ---------- 學習庫 / 資料庫 ---------- */
   const dbModal = $("#dbModal");
+  function renderStats(s) {
+    let html = `<p>後端：<b>${s.backend}</b></p><table><tr><th>模組</th><th>密碼數</th><th>累計命中</th></tr>`;
+    (s.by_module || []).forEach(m => html += `<tr><td>${m.module}</td><td>${m.count}</td><td>${m.hits}</td></tr>`);
+    if (!(s.by_module || []).length) html += `<tr><td colspan=3>尚無學習紀錄</td></tr>`;
+    $("#learnStats").innerHTML = html + "</table>";
+  }
   $("#btnDb").onclick = async () => {
     dbModal.classList.add("show");
+    if (!hasBackend) {
+      renderStats(Local.LocalLearn.stats());
+      // 線上版用瀏覽器 localStorage，隱藏 MariaDB 設定
+      $("#dbModal .chk").style.display = "none";
+      $("#dbModal .form-grid").style.display = "none";
+      $("#dbSave").style.display = "none";
+      return;
+    }
     try {
-      const s = await api("/api/learn/stats");
-      let html = `<p>後端：<b>${s.backend}</b></p><table><tr><th>模組</th><th>密碼數</th><th>累計命中</th></tr>`;
-      (s.by_module || []).forEach(m => html += `<tr><td>${m.module}</td><td>${m.count}</td><td>${m.hits}</td></tr>`);
-      if (!(s.by_module || []).length) html += `<tr><td colspan=3>尚無學習紀錄</td></tr>`;
-      $("#learnStats").innerHTML = html + "</table>";
+      renderStats(await api("/api/learn/stats"));
       const c = await api("/api/db/config");
       $("#dbEnabled").checked = !!c.db.enabled;
       $("#dbHost").value = c.db.host; $("#dbPort").value = c.db.port;
@@ -228,9 +285,38 @@
     } else { toast("線上版會自動使用最新版"); }
   };
 
+  /* ---------- PWA 安裝（iPhone/iPad/Android 線上安裝、桌面瀏覽器） ---------- */
+  let deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); deferredPrompt = e; $("#btnInstall").style.display = "";
+  });
+  $("#btnInstall").onclick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt(); await deferredPrompt.userChoice;
+      deferredPrompt = null; $("#btnInstall").style.display = "none";
+    } else {
+      // iOS Safari 無 beforeinstallprompt → 教學
+      toast("iPhone/iPad：點分享鈕 → 加入主畫面");
+    }
+  };
+
+  /* ---------- 無後端（線上/手機）時的畫面調整 ---------- */
+  function applyOnlineMode() {
+    hasBackend = false;
+    // 檔案輸入框提示改為「選擇檔案」導向
+    $("#archivePath").placeholder = "點右邊選擇壓縮檔（線上版支援 ZIP）";
+    $("#officePath").placeholder = "Office 密碼回復僅桌面版";
+    $("#btnUpdate").style.display = "none";
+  }
+  document.addEventListener("nobackend", applyOnlineMode);
+
   /* ---------- 啟動 ---------- */
   loadVersion();
-  // 純前端（無後端）時，local.js 會設 window.NO_BACKEND
-  if (window.NO_BACKEND) hasBackend = false;
+  if (window.NO_BACKEND) applyOnlineMode();
+  // iOS 沒有 beforeinstallprompt，但若非 standalone 仍顯示安裝鈕給教學
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) &&
+      !window.navigator.standalone && !window.matchMedia("(display-mode: standalone)").matches) {
+    $("#btnInstall").style.display = "";
+  }
   setTimeout(() => { if (Voice.isEnabled()) Voice.speakScript("welcome"); }, 800);
 })();

@@ -37,11 +37,24 @@ python tools/make_icon.py        # 產生圖示
 pyinstaller packaging/pwfinder.spec
 ```
 
-## 平台規劃
-- ✅ Windows 11（本版）
-- ⬜ macOS（pywebview）
-- ⬜ 線上版（HTML，`web/` 部署 GitHub Pages，純前端退路見 `js/local.js`）
-- ⬜ iPhone / iPad（線上安裝）、Android（WebView 外殼）
+## 平台狀態
+- ✅ **Windows 11** — PyInstaller + Inno Setup 安裝檔，已實測
+- ✅ **macOS** — 同一份程式（pywebview），CI 以 `pyinstaller` 打成 `.app`（`build.yml` macos job）
+- ✅ **線上版（HTML）** — `web/` 部署 GitHub Pages（`pages.yml`）。純前端支援：文字抓密碼、ZIP 密碼回復（zip.js）、localStorage 學習庫
+- ✅ **iPhone / iPad / Android 線上安裝** — PWA（`manifest.webmanifest` + `sw.js`），可離線、可「加入主畫面」安裝
+
+### 各平台功能差異
+| 功能 | 桌面(Win/Mac) | 線上/PWA |
+|---|---|---|
+| 文字抓密碼 | ✅ | ✅ |
+| 壓縮檔密碼 | ✅ ZIP/7z/RAR | ✅ 僅 ZIP |
+| Office 密碼 | ✅ | ✖（僅桌面） |
+| WiFi / 星號 / 郵件 | ✅ | ✖（需系統權限） |
+| 成功密碼學習庫 | JSON／MariaDB | localStorage |
+
+## CI（GitHub Actions）
+- `.github/workflows/pages.yml` — 推 `web/**` 自動部署線上版到 Pages
+- `.github/workflows/build.yml` — 推 `v*` tag 自動建置 Windows 安裝檔與 macOS `.app` 並發佈 Release
 
 ## 架構
 - `main.py` — pywebview 入口（檔案選擇、檢查更新）
